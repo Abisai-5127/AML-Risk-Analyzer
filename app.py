@@ -32,23 +32,33 @@ st.markdown("---")
 if st.button("Run Risk Analysis", use_container_width=True):
     with st.spinner("Analyzing behavioral patterns..."):
         
-        # Apply the exact same Feature Engineering from Phase 2
+        # Apply the exact same Feature Engineering
         night_txn = 1 if hour < 5 else 0
         smurfing = 1 if 45000 <= amount < 50000 else 0
         
-        # Package the data for the AI
+        # Package the data
         input_data = pd.DataFrame([[amount, night_txn, smurfing, velocity]], 
                                   columns=['Amount_INR', 'Night_Transaction', 'Smurfing_Flag', 'Account_Velocity'])
         
-        # Make the prediction
-        prediction = model.predict(input_data)
+        # UPGRADE: Get the exact probability score instead of a hard 0/1
+        probabilities = model.predict_proba(input_data)
         
-        # --- 5. Display Results ---
-        if prediction[0] == 1:
-            st.error("🚨 **HIGH RISK ALERT: Potential Money Laundering Detected!**")
-            st.write("**Flagged Behaviors:**")
-            if night_txn == 1: st.write("- 🌙 Suspicious late-night transaction hours.")
-            if smurfing == 1: st.write("- ⚠️ Amount falls within known 'Smurfing' threshold.")
-            if velocity > 5: st.write("- 🔄 Abnormally high transaction velocity for this account.")
+        # probabilities[0][1] gives us the percentage chance of class '1' (Laundering)
+        risk_score = probabilities[0][1] * 100 
+        
+        # --- 5. Display Results with a Risk Meter ---
+        st.markdown(f"### AI Risk Score: {risk_score:.2f}%")
+        
+        # Create a visual progress bar for the risk meter
+        st.progress(int(risk_score))
+        
+        # We can set our own threshold now! If risk is over 40%, flag it for review.
+        if risk_score > 40.0:
+            st.error("🚨 **ALERT: Suspicious Behavior Detected. Route to Compliance Team.**")
+            st.write("**Contributing Factors:**")
+            if night_txn == 1: st.write("- 🌙 Occurred during high-risk hours (Midnight - 5 AM).")
+            if smurfing == 1: st.write("- ⚠️ Amount sits just below reporting thresholds (Smurfing).")
+            if velocity > 5: st.write("- 🔄 Unusually high transaction velocity.")
+            if amount > 1000000: st.write("- 💰 Exceptionally high raw transfer volume.")
         else:
-            st.success("✅ **LOW RISK: Transaction appears normal.**")
+            st.success("✅ **LOW RISK: No significant behavioral anomalies detected.**")
