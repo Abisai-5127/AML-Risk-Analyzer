@@ -64,7 +64,7 @@ if st.button("Run Risk Analysis", use_container_width=True):
         st.progress(int(final_risk_score) / 100.0)
         
         # Alert Threshold
-        if final_risk_score > 40.0:
+        if final_risk_score >= 40.0:
             st.error("🚨 **ALERT: Suspicious Behavior Detected. Route to Compliance Team.**")
             st.write("**Contributing Factors:**")
             if night_txn == 1: st.write("- 🌙 Occurred during high-risk hours (Midnight - 5 AM).")
