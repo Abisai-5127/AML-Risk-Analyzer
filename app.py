@@ -62,3 +62,13 @@ if st.button("Run Risk Analysis", use_container_width=True):
             if amount > 1000000: st.write("- 💰 Exceptionally high raw transfer volume.")
         else:
             st.success("✅ **LOW RISK: No significant behavioral anomalies detected.**")
+            
+        # --- THE HYBRID OVERRIDE ENGINE (TUNED FOR SMOTE AI) ---
+        # Because our new SMOTE AI is much more sensitive, we reduce the manual penalties
+        compliance_penalty = 0
+        if smurfing == 1: compliance_penalty += 15.0  # Reduced from 35
+        if night_txn == 1: compliance_penalty += 10.0 # Reduced from 20
+        if velocity > 10: compliance_penalty += 15.0  # Reduced from 30
+        
+        # Calculate Final Score (Capped at 99%)
+        final_risk_score = min(base_ai_score + compliance_penalty, 99.0)
