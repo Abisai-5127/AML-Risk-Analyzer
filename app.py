@@ -5,7 +5,7 @@ import pandas as pd
 # --- 1. Load the AI Model ---
 @st.cache_resource
 def load_model():
-    return joblib.load('aml_risk_model.pkl')
+    return joblib.load('aml_risk_model.pkl.gz')
 
 model = load_model()
 
