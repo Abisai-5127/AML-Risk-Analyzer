@@ -43,32 +43,32 @@ if st.button("Run Risk Analysis", use_container_width=True):
         # UPGRADE: Get the exact probability score instead of a hard 0/1
         probabilities = model.predict_proba(input_data)
         
-        # probabilities[0][1] gives us the percentage chance of class '1' (Laundering)
-        risk_score = probabilities[0][1] * 100 
+       # probabilities[0][1] gives us the percentage chance of class '1' (Laundering)
+        base_ai_score = probabilities[0][1] * 100 
+        
+        # --- THE HYBRID OVERRIDE ENGINE (TUNED FOR SMOTE AI) ---
+        # Because our new SMOTE AI is much more sensitive, we reduce the manual penalties
+        compliance_penalty = 0
+        if smurfing == 1: compliance_penalty += 15.0  
+        if night_txn == 1: compliance_penalty += 10.0 
+        if velocity > 10: compliance_penalty += 15.0  
+        
+        # Calculate Final Score (Capped at 99%)
+        final_risk_score = min(base_ai_score + compliance_penalty, 99.0)
         
         # --- 5. Display Results with a Risk Meter ---
-        st.markdown(f"### AI Risk Score: {risk_score:.2f}%")
+        st.markdown(f"### Final AML Risk Score: {final_risk_score:.2f}%")
+        st.caption(f"*(Base AI Score: {base_ai_score:.2f}% | Compliance Override Penalty: +{compliance_penalty:.2f}%)*")
         
         # Create a visual progress bar for the risk meter
-        st.progress(int(risk_score))
+        st.progress(int(final_risk_score) / 100.0)
         
-        # We can set our own threshold now! If risk is over 40%, flag it for review.
-        if risk_score > 40.0:
+        # Alert Threshold
+        if final_risk_score > 40.0:
             st.error("🚨 **ALERT: Suspicious Behavior Detected. Route to Compliance Team.**")
             st.write("**Contributing Factors:**")
             if night_txn == 1: st.write("- 🌙 Occurred during high-risk hours (Midnight - 5 AM).")
             if smurfing == 1: st.write("- ⚠️ Amount sits just below reporting thresholds (Smurfing).")
-            if velocity > 5: st.write("- 🔄 Unusually high transaction velocity.")
-            if amount > 1000000: st.write("- 💰 Exceptionally high raw transfer volume.")
+            if velocity > 5: st.write(f"- 🔄 Unusually high transaction velocity ({velocity} txns/24h).")
         else:
             st.success("✅ **LOW RISK: No significant behavioral anomalies detected.**")
-            
-        # --- THE HYBRID OVERRIDE ENGINE (TUNED FOR SMOTE AI) ---
-        # Because our new SMOTE AI is much more sensitive, we reduce the manual penalties
-        compliance_penalty = 0
-        if smurfing == 1: compliance_penalty += 15.0  # Reduced from 35
-        if night_txn == 1: compliance_penalty += 10.0 # Reduced from 20
-        if velocity > 10: compliance_penalty += 15.0  # Reduced from 30
-        
-        # Calculate Final Score (Capped at 99%)
-        final_risk_score = min(base_ai_score + compliance_penalty, 99.0)
